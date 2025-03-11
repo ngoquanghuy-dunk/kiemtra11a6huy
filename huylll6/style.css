@@ -1,0 +1,262 @@
+@import url('https://fonts.googleapis.com/css?family=Poppins');
+
+/* GLOBAL */
+*:focus {
+    outline: none;
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --main-color: #F47B2C;
+    --secondary-color: #D3D6D8;
+}
+
+/* BASIC */
+
+html {
+    background-color: var(--secondary-color);
+}
+
+body {
+    font-family: "Poppins", sans-serif;
+    height: 100vh;
+}
+
+a {
+    color: var(--main-color);
+    display: inline-block;
+    text-decoration: none;
+    font-weight: 400;
+}
+
+h2 {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-block;
+    margin: 40px 8px 10px 8px;
+    color: var(--secondary-color);
+}
+
+
+
+/* STRUCTURE */
+
+.wrapper {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    min-height: 100%;
+    padding: 20px;
+}
+
+#form-content {
+    border-radius: 10px 10px 10px 10px;
+    background: #fff;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    padding: 0px;
+    box-shadow: 0 30px 60px 0 rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+#form-footer {
+    background-color: #f6f6f6;
+    border-top: 1px solid #dce8f1;
+    padding: 25px;
+    text-align: center;
+    border-radius: 0 0 10px 10px;
+}
+
+#avatar {
+    width: 150px;
+    margin: 1rem auto;
+}
+
+h2.inactive {
+    color: #cccccc;
+}
+
+h2.active {
+    color: #0d0d0d;
+    border-bottom: 2px solid var(--main-color);
+}
+
+
+
+/* FORM TYPOGRAPHY*/
+form {
+    padding: 1.5rem;
+}
+
+input[type=button],
+input[type=submit],
+input[type=reset] {
+    background-color: var(--main-color);
+    border: none;
+    color: white;
+    padding: 1rem 4rem;
+    text-align: center;
+    width: 100%;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 1rem;
+    box-shadow: 0 10px 30px 0 var(--main-color);
+    border-radius: 5px 5px 5px 5px;
+    margin: 5px auto;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+}
+
+input[type=button]:hover,
+input[type=submit]:hover,
+input[type=reset]:hover {
+    background-color: var(--main-color);
+}
+
+input[type=text],
+input[type=email],
+input[type=password] {
+    background-color: #f6f6f6;
+    border: none;
+    color: #0d0d0d;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1rem;
+    margin: 5px auto;
+    width: 100%;
+    border: 2px solid #f6f6f6;
+    transition: all 0.5s ease-in-out;
+    border-radius: 5px 5px 5px 5px;
+}
+
+input[type=text]:focus,
+input[type=password]:focus {
+    background-color: #fff;
+    border-bottom: 2px solid var(--main-color);
+}
+
+input[type=text]:placeholder {
+    color: #cccccc;
+}
+
+/* ANIMATIONS */
+
+/* Simple CSS3 Fade-in-down Animation */
+.fade-in-down {
+    animation-name: fadeInDown;
+    animation-duration: 1s;
+    animation-fill-mode: both;
+}
+
+@-webkit-keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, -100%, 0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, -100%, 0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Simple CSS3 Fade-in Animation */
+@-webkit-keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@-moz-keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    opacity: 0;
+    animation: fadeIn ease-in 1;
+    animation-fill-mode: forwards;
+    animation-duration: 1s;
+}
+
+.fade-in.first {
+    animation-delay: 0.4s;
+}
+
+.fade-in.second {
+    animation-delay: 0.6s;
+}
+
+.fade-in.third {
+    animation-delay: 0.8s;
+}
+
+.fade-in.fourth {
+    animation-delay: 1s;
+}
+
+.fade-in.five {
+    animation-delay: 1.2s;
+}
+
+/* Simple CSS3 Fade-in Animation */
+.underline-hover:after {
+    display: block;
+    left: 0;
+    bottom: -10px;
+    width: 0;
+    height: 2px;
+    background-color: var(--main-color);
+    content: "";
+    transition: width 0.2s;
+}
+
+.underline-hover:hover {
+    color: #0d0d0d;
+}
+
+.underline-hover:hover:after {
+    width: 100%;
+}
