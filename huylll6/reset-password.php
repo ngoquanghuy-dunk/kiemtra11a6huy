@@ -1,39 +1,36 @@
 <?php
+// Khởi động session
 session_start();
 
-// Nếu đã đăng nhập, chuyển hướng đến dashboard
-if (isset($_SESSION['user_id'])) {
-    header("Location: dashboard.php");
-    exit();
-}
+// Biến để lưu thông báo
+$message = "";
 
-$error = "";
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = htmlspecialchars(trim($_POST['username']));
-    $password = htmlspecialchars(trim($_POST['password']));
-
-    // Kết nối cơ sở dữ liệu
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = htmlspecialchars($_POST["email"]);
+    
+    // Kết nối cơ sở dữ liệu để kiểm tra email
     $conn = new mysqli("localhost", "username", "password", "database");
     if ($conn->connect_error) {
         die("Kết nối thất bại: " . $conn->connect_error);
     }
 
-    // Kiểm tra thông tin đăng nhập
-    $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
+    // Kiểm tra email có tồn tại không
+    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
 
-    if ($user && password_verify($password, $user['password'])) {
-        // Lưu thông tin vào session
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        header("Location: dashboard.php"); // Chuyển hướng đến dashboard
-        exit();
+    if ($result->num_rows > 0) {
+        // Giả lập gửi email reset (thay bằng logic gửi email thực tế)
+        $reset_token = bin2hex(random_bytes(16)); // Tạo token ngẫu nhiên
+        $stmt = $conn->prepare("UPDATE users SET reset_token = ? WHERE email = ?");
+        $stmt->bind_param("ss", $reset_token, $email);
+        $stmt->execute();
+        
+        $message = "Yêu cầu reset mật khẩu đã được gửi đến $email. Vui lòng kiểm tra email của bạn.";
+        // Thực tế: gửi email với liên kết reset như "example.com/reset.php?token=$reset_token"
     } else {
-        $error = "Tên đăng nhập hoặc mật khẩu không đúng!";
+        $message = "Email không tồn tại trong hệ thống.";
     }
 
     $stmt->close();
@@ -46,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Nhập</title>
+    <title>Reset Mật Khẩu</title>
     <style>
         * {
             margin: 0;
@@ -57,9 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         body {
             background-color: #DBDBDB;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
         }
 
         header {
@@ -93,46 +91,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: #f0f0f0;
         }
 
-        .login-content {
+        .reset-content {
             max-width: 700px;
-            margin: 50px auto;
-            padding: 30px;
+            margin: auto;
+            padding: 40px;
             background-color: #fff;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
         }
 
-        .login-content h1 {
+        .reset-content h1 {
             font-family: 'Georgia', serif;
             font-size: 36px;
             margin-bottom: 30px;
             text-align: center;
         }
 
-        .error-message {
-            font-family: 'Verdana', sans-serif;
-            font-size: 16px;
-            color: #706D54;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .form-group label {
             display: block;
             font-family: 'Verdana', sans-serif;
-            font-size: 18px;
-            margin-bottom: 8px;
+            font-size: 20px;
+            margin-bottom: 10px;
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             font-family: 'Arial', sans-serif;
-            font-size: 16px;
+            font-size: 18px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
@@ -146,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border: none;
             border-radius: 5px;
             font-family: 'Arial', sans-serif;
-            font-size: 18px;
+            font-size: 20px;
             cursor: pointer;
         }
 
@@ -154,20 +144,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-color: #8c7352;
         }
 
-        .form-footer {
+        .message {
             text-align: center;
-            margin-top: 20px;
-        }
-
-        .form-footer a {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Verdana', sans-serif;
             font-size: 16px;
             color: #A08963;
-            text-decoration: none;
-        }
-
-        .form-footer a:hover {
-            color: #8c7352;
+            margin-bottom: 20px;
         }
 
         footer {
@@ -178,7 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             width: 100%;
             font-family: 'Times New Roman', serif;
             font-size: 14px;
-            margin-top: auto;
         }
     </style>
 </head>
@@ -196,29 +177,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </nav>
     </header>
 
-    <div class="login-content">
-        <h1>Đăng Nhập</h1>
-
-        <?php if (!empty($error)): ?>
-            <div class="error-message"><?php echo $error; ?></div>
+    <div class="reset-content">
+        <h1>Reset Mật Khẩu</h1>
+        <?php if (!empty($message)): ?>
+            <div class="message"><?php echo $message; ?></div>
         <?php endif; ?>
-
-        <form method="POST" action="login.php">
+        <form action="reset_password.php" method="POST">
             <div class="form-group">
-                <label for="username">Tên đăng nhập</label>
-                <input type="text" id="username" name="username" required>
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="Nhập email của bạn">
             </div>
-            <div class="form-group">
-                <label for="password">Mật khẩu</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" class="btn-submit">Đăng Nhập</button>
+            <button type="submit" class="btn-submit">Gửi Yêu Cầu</button>
         </form>
-
-        <div class="form-footer">
-            <a href="reset_password.php">Quên mật khẩu?</a> | 
-            <a href="register.php">Đăng ký</a>
-        </div>
     </div>
 
     <footer>

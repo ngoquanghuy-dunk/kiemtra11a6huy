@@ -1,54 +1,56 @@
 <?php
+// Khởi động session
 session_start();
 
+// Kiểm tra nếu người dùng chưa đăng nhập, chuyển hướng về login
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
 $errors = [];
-$username = "";
-$email = "";
+$success_message = "";
+$name = "";
+$price = "";
+$description = "";
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = htmlspecialchars(trim($_POST['username']));
-    $email = htmlspecialchars(trim($_POST['email']));
-    $password = htmlspecialchars(trim($_POST['password']));
-    $repeat_password = htmlspecialchars(trim($_POST['repeat-password']));
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $name = htmlspecialchars(trim($_POST["name"]));
+    $price = htmlspecialchars(trim($_POST["price"]));
+    $description = htmlspecialchars(trim($_POST["description"]));
 
-    if (empty($username)) {
-        $errors['username'] = "Vui lòng nhập họ tên.";
+    // Kiểm tra dữ liệu đầu vào
+    if (empty($name)) {
+        $errors['name'] = "Vui lòng nhập tên sản phẩm.";
     }
 
-    if (empty($email)) {
-        $errors['email'] = "Vui lòng nhập email.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = "Email không đúng định dạng.";
+    if (empty($price)) {
+        $errors['price'] = "Vui lòng nhập giá sản phẩm.";
+    } elseif (!preg_match("/^[0-9,]+$/", $price)) {
+        $errors['price'] = "Giá phải là số (có thể dùng dấu phẩy).";
     }
 
-    if (empty($password)) {
-        $errors['password'] = "Vui lòng nhập mật khẩu.";
-    } elseif (strlen($password) < 6) {
-        $errors['password'] = "Mật khẩu phải có ít nhất 6 ký tự.";
+    if (empty($description)) {
+        $errors['description'] = "Vui lòng nhập mô tả sản phẩm.";
     }
 
-    if ($password !== $repeat_password) {
-        $errors['repeat-password'] = "Mật khẩu xác nhận không khớp.";
-    }
-
+    // Nếu không có lỗi, lưu vào cơ sở dữ liệu
     if (empty($errors)) {
-        // Kết nối cơ sở dữ liệu để lưu thông tin
         $conn = new mysqli("localhost", "username", "password", "database");
         if ($conn->connect_error) {
             die("Kết nối thất bại: " . $conn->connect_error);
         }
 
-        // Mã hóa mật khẩu trước khi lưu
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $username, $email, $hashed_password);
-        
+        $stmt = $conn->prepare("INSERT INTO products (name, price, description) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $name, $price, $description);
+
         if ($stmt->execute()) {
-            $_SESSION['success'] = "Chào mừng $username, bạn đã đăng ký thành công!";
-            $username = "";
-            $email = "";
+            $success_message = "Sản phẩm '$name' đã được thêm thành công!";
+            $name = "";
+            $price = "";
+            $description = "";
         } else {
-            $errors['database'] = "Đăng ký thất bại. Vui lòng thử lại.";
+            $errors['database'] = "Thêm sản phẩm thất bại. Vui lòng thử lại.";
         }
 
         $stmt->close();
@@ -62,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Ký</title>
+    <title>Thêm Sản Phẩm</title>
     <style>
         * {
             margin: 0;
@@ -109,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #f0f0f0;
         }
 
-        .register-content {
+        .add-content {
             max-width: 700px;
             margin: 50px auto;
             padding: 30px;
@@ -118,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
-        .register-content h1 {
+        .add-content h1 {
             font-family: 'Georgia', serif;
             font-size: 36px;
             margin-bottom: 30px;
@@ -151,13 +153,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 8px;
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group textarea {
             width: 100%;
             padding: 12px;
             font-family: 'Arial', sans-serif;
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 5px;
+        }
+
+        .form-group textarea {
+            height: 150px;
+            resize: vertical;
         }
 
         .btn-submit {
@@ -177,19 +185,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-color: #8c7352;
         }
 
-        .form-footer {
+        .back-link {
+            display: block;
             text-align: center;
             margin-top: 20px;
-        }
-
-        .form-footer a {
             font-family: 'Arial', sans-serif;
             font-size: 16px;
             color: #A08963;
             text-decoration: none;
         }
 
-        .form-footer a:hover {
+        .back-link:hover {
             color: #8c7352;
         }
 
@@ -207,73 +213,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <header>
-        <img src="SU8HhT2n6tL-p-_.png" alt="Logo" class="logo">
+        <img src="logo.png" alt="Logo" class="logo">
         <nav>
             <ul>
-                <li><a href="index.php">Trang Chủ</a></li>
-                <li><a href="about.php">Giới Thiệu</a></li>
-                <li><a href="contact.php">Liên Hệ</a></li>
-                <li><a href="login.php">Đăng Nhập</a></li>
-                <li><a href="logout.php">Đăng Xuất</a></li>
+                <li><a href="../index.php">Trang Chủ</a></li>
+                <li><a href="../about.php">Giới Thiệu</a></li>
+                <li><a href="../contact.php">Liên Hệ</a></li>
+                <li><a href="../login.php">Đăng Nhập</a></li>
+                <li><a href="../logout.php">Đăng Xuất</a></li>
             </ul>
         </nav>
     </header>
 
-    <div class="register-content">
-        <h1>Đăng Ký</h1>
+    <div class="add-content">
+        <h1>Thêm Sản Phẩm</h1>
 
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="success-message">
-                <?php
-                echo $_SESSION['success'];
-                unset($_SESSION['success']);
-                ?>
-            </div>
+        <?php if (!empty($success_message)): ?>
+            <div class="success-message"><?php echo $success_message; ?></div>
         <?php endif; ?>
 
         <?php if (isset($errors['database'])): ?>
             <div class="error-message"><?php echo $errors['database']; ?></div>
         <?php endif; ?>
 
-        <form method="POST" action="register.php">
+        <form method="POST" action="add-product.php">
             <div class="form-group">
-                <label for="username">Họ tên</label>
-                <input type="text" id="username" name="username" value="<?php echo htmlspecialchars($username); ?>" required>
-                <?php if (isset($errors['username'])): ?>
-                    <div class="error-message"><?php echo $errors['username']; ?></div>
+                <label for="name">Tên</label>
+                <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($name); ?>" required>
+                <?php if (isset($errors['name'])): ?>
+                    <div class="error-message"><?php echo $errors['name']; ?></div>
                 <?php endif; ?>
             </div>
 
             <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email); ?>" required>
-                <?php if (isset($errors['email'])): ?>
-                    <div class="error-message"><?php echo $errors['email']; ?></div>
+                <label for="price">Giá</label>
+                <input type="text" id="price" name="price" value="<?php echo htmlspecialchars($price); ?>" required>
+                <?php if (isset($errors['price'])): ?>
+                    <div class="error-message"><?php echo $errors['price']; ?></div>
                 <?php endif; ?>
             </div>
 
             <div class="form-group">
-                <label for="password">Mật khẩu</label>
-                <input type="password" id="password" name="password" required>
-                <?php if (isset($errors['password'])): ?>
-                    <div class="error-message"><?php echo $errors['password']; ?></div>
+                <label for="description">Mô tả</label>
+                <textarea id="description" name="description" required><?php echo htmlspecialchars($description); ?></textarea>
+                <?php if (isset($errors['description'])): ?>
+                    <div class="error-message"><?php echo $errors['description']; ?></div>
                 <?php endif; ?>
             </div>
 
-            <div class="form-group">
-                <label for="repeat-password">Xác nhận mật khẩu</label>
-                <input type="password" id="repeat-password" name="repeat-password" required>
-                <?php if (isset($errors['repeat-password'])): ?>
-                    <div class="error-message"><?php echo $errors['repeat-password']; ?></div>
-                <?php endif; ?>
-            </div>
-
-            <button type="submit" class="btn-submit">Đăng Ký</button>
+            <button type="submit" class="btn-submit">Thêm Sản Phẩm</button>
         </form>
 
-        <div class="form-footer">
-            <a href="reset_password.php">Quên mật khẩu?</a>
-        </div>
+        <a href="index.php" class="back-link">Quay lại Danh Sách Sản Phẩm</a>
     </div>
 
     <footer>
